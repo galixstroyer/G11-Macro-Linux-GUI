@@ -11,8 +11,8 @@ They already work fine in Linux and are not of interest here.
 * Supports banking with the 'M' keys, with LED feedback
 * The 'MR' key can be used for recording macros on the fly
 
-### Not supported _(yet?)_
-* Any kind of GUI for configuring the macros
+### GUI
+A graphical configuration tool is available in [`../gui/`](../gui) — see the [project README](../README.md) for setup instructions.
 
 ### G15 Support
 Allegedly, the Logitech G15 keyboard uses the same interface as the G11 for its macro keys.

@@ -1,0 +1,194 @@
+/* =========================================================
+   G11 Macro Manager — Custom Stylesheet
+   ========================================================= */
+
+/* --- Sidebar -------------------------------------------- */
+.sidebar-nav {
+    background-color: @sidebar_bg_color;
+}
+
+.sidebar-nav row {
+    padding: 4px 8px;
+    border-radius: 8px;
+    margin: 2px 6px;
+}
+
+.sidebar-nav row:selected {
+    background-color: alpha(@accent_color, 0.2);
+    color: @accent_color;
+}
+
+/* --- Keyboard panel ------------------------------------ */
+.keyboard-panel {
+    background-color: #1c1c22;
+    border-radius: 14px;
+    padding: 20px;
+    margin: 12px;
+    box-shadow: 0 4px 24px alpha(black, 0.35);
+}
+
+/* --- G keys -------------------------------------------- */
+.gkey {
+    background-color: #2a2a33;
+    color: #b0b0c0;
+    border-radius: 8px;
+    border: 1px solid #3a3a48;
+    font-weight: bold;
+    font-size: 11px;
+    min-width:  52px;
+    min-height: 52px;
+    transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.gkey:hover {
+    background-color: #35354a;
+    border-color: #5555aa;
+}
+
+.gkey.has-macro {
+    background-color: #1a3d6a;
+    border-color: #2266bb;
+    color: #88ccff;
+}
+
+.gkey.has-macro:hover {
+    background-color: #1f4a7f;
+    border-color: #3388dd;
+}
+
+.gkey.selected {
+    background-color: #0055cc;
+    border-color: #44aaff;
+    color: white;
+    box-shadow: 0 0 0 2px #44aaff, 0 2px 10px alpha(#0088ff, 0.5);
+}
+
+.gkey.selected.has-macro {
+    background-color: #0066dd;
+}
+
+/* --- M bank keys --------------------------------------- */
+.mkey {
+    background-color: #252530;
+    color: #808090;
+    border-radius: 7px;
+    border: 1px solid #38384a;
+    font-weight: bold;
+    font-size: 12px;
+    min-width:  46px;
+    min-height: 38px;
+    transition: background-color 100ms ease;
+}
+
+.mkey:hover {
+    background-color: #303040;
+}
+
+.mkey.active {
+    background-color: #003d99;
+    border-color: #0055cc;
+    color: #aaccff;
+    box-shadow: 0 0 8px alpha(#0066ff, 0.4);
+}
+
+/* --- MR key ------------------------------------------- */
+.mrkey {
+    background-color: #252530;
+    color: #808090;
+    border-radius: 7px;
+    border: 1px solid #38384a;
+    font-weight: bold;
+    font-size: 12px;
+    min-width:  46px;
+    min-height: 38px;
+}
+
+.mrkey.active {
+    background-color: #660033;
+    border-color: #cc0055;
+    color: #ffaacc;
+    box-shadow: 0 0 8px alpha(#ff0066, 0.4);
+}
+
+/* --- Service status badges ----------------------------- */
+.status-badge {
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.status-running {
+    background-color: alpha(#33cc66, 0.18);
+    color: #33cc66;
+    border: 1px solid alpha(#33cc66, 0.4);
+}
+
+.status-stopped {
+    background-color: alpha(#cc5500, 0.18);
+    color: #cc7733;
+    border: 1px solid alpha(#cc5500, 0.3);
+}
+
+.status-failed {
+    background-color: alpha(#cc3333, 0.18);
+    color: #ff4444;
+    border: 1px solid alpha(#cc3333, 0.4);
+}
+
+/* --- Log viewer --------------------------------------- */
+.log-view {
+    font-family: monospace;
+    font-size: 12px;
+    background-color: #12121a;
+    color: #b0b0c8;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+/* --- Step rows --------------------------------------- */
+.step-row-icon {
+    color: @accent_color;
+}
+
+.step-drag-handle {
+    color: alpha(@foreground_color, 0.4);
+}
+
+/* --- LED page ---------------------------------------- */
+.led-indicator {
+    border-radius: 50%;
+    min-width:  14px;
+    min-height: 14px;
+    border: 1px solid alpha(currentColor, 0.5);
+}
+
+.led-on {
+    background-color: #2266ff;
+    box-shadow: 0 0 6px alpha(#2266ff, 0.8);
+    color: #2266ff;
+}
+
+.led-off {
+    background-color: #222233;
+    color: #444466;
+}
+
+/* --- Misc --------------------------------------------- */
+.section-title {
+    font-weight: bold;
+    font-size: 13px;
+    color: alpha(@foreground_color, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dimmed {
+    color: alpha(@foreground_color, 0.5);
+    font-size: 12px;
+}
+
+.macro-summary {
+    color: alpha(@foreground_color, 0.65);
+    font-size: 12px;
+}

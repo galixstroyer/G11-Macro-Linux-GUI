@@ -1,5 +1,23 @@
+# Rust build artifacts
 /target
-Cargo.lock
 
+# IDE files
 /.idea
 *.iml
+.vscode/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
