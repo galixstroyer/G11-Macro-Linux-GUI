@@ -1,6 +1,6 @@
 # g11-macro
 
-Full Linux support for the macro keys on a **Logitech G11** (and possibly G15) gaming keyboard, including a graphical configuration tool.
+Full Linux support for the macro keys on **Logitech G11** and **G15** gaming keyboards, including a graphical configuration tool.
 
 ---
 
@@ -37,7 +37,7 @@ g11-macro-gui
 | Component | Description |
 |---|---|
 | [`g11-macro-daemon`](g11-macro-daemon) | Rust daemon that runs in the background and executes macros when G keys are pressed |
-| [`g11-macro-keys`](g11-macro-keys) | Base Rust library for reading G11 key events and controlling LEDs over USB HID |
+| [`g11-macro-keys`](g11-macro-keys) | Base Rust library for reading G11/G15 key events and controlling LEDs over USB HID |
 | [`gui/`](gui) | Python GTK4 GUI for configuring macros, controlling the daemon, and managing LEDs |
 
 ---
@@ -54,6 +54,7 @@ A full graphical interface built with Python, GTK4, and libadwaita.
 - **Macro editor** — add, edit, remove, and reorder steps with a form-based dialog
 - **6 step types** — Key stroke, Type text, Mouse button, Move mouse, Scroll, Run program
 - **Key repeat** — set any key step to repeat 1–100 times (e.g. Backspace ×5)
+- **Keyboard model selector** — switch between G11 and G15 mode from the GUI
 - **Daemon controls** — start, stop, restart, enable auto-start on login
 - **Live log viewer** — tail the daemon's systemd journal directly in the app
 - **LED panel** — toggle M1/M2/M3/MR LEDs on and off
@@ -176,8 +177,12 @@ source ~/.cargo/env
 
 # 2. Install udev rules (allows USB HID access without root)
 sudo tee /etc/udev/rules.d/g11-macro.rules << 'EOF'
+# G11
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c225", MODE="0666", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="g11-macro-daemon.service"
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c221", MODE="0666"
+# G15
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="g11-macro-daemon.service"
+SUBSYSTEM=="input", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666"
 EOF
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
@@ -208,22 +213,52 @@ systemctl --user enable --now g11-macro-daemon
 
 ---
 
-## Hardware Notes
+## Supported Keyboards
 
-The G11 macro interface (USB `046d:c225`) supports:
+### Logitech G11
+
+The G11 uses a dedicated raw HID interface (USB `046d:c225`) for its macro keys. This is the default mode.
 
 | Feature | Supported |
 |---|---|
 | G1–G18 key events | Yes |
-| M1/M2/M3 bank LEDs (on/off) | Yes |
-| MR LED (on/off) | Yes |
-| Backlight on/off | Physical key only |
-| Backlight brightness | Physical key only (3 levels) |
-| Per-key RGB | No (fixed blue hardware) |
+| M1/M2/M3 bank LEDs | Yes |
+| MR LED | Yes |
+| MR macro recording | Yes |
+| Backlight | Physical key only |
 
-### G15 Compatibility
+### Logitech G15
 
-The G15 keyboard reportedly uses the same macro interface. It may work, but has not been tested.
+The G15 exposes its G-keys through the Linux input subsystem (evdev) via the `lg-g15` kernel driver, rather than a dedicated HID interface. To use a G15, select **G15** in the GUI's Keyboard Model dropdown on the Service page, or create `~/.config/g11-macro-daemon/settings.ron`:
+
+```ron
+#![enable(explicit_struct_names)]
+Settings(
+    keyboard: G15,
+)
+```
+
+| Feature | Supported |
+|---|---|
+| G1–G18 key events | Yes |
+| M1/M2/M3 bank LEDs | Yes (via `046d:c222` hidraw) |
+| MR LED | Yes (via `046d:c222` hidraw) |
+| MR macro recording | Not yet |
+| Backlight | Physical key only |
+
+**Notes for G15 users:**
+
+- If g15daemon is running, stop it first — it conflicts with the macro daemon's access to the G-key device.
+- The daemon auto-detects the correct evdev input device. If auto-detection picks the wrong one, you can override it in `settings.ron`:
+  ```ron
+  #![enable(explicit_struct_names)]
+  Settings(
+      keyboard: G15,
+      device_path: Some("/dev/input/event17"),
+  )
+  ```
+- LED control requires read/write access to the G15's hidraw device (`046d:c222`). The installer sets up udev rules for this. If LEDs don't work, the daemon will still function — it just won't show M-key indicators.
+- The G-key device is grabbed exclusively so that key events don't leak to the desktop (e.g. G6 sending `KEY_HOMEPAGE` to the browser).
 
 ---
 

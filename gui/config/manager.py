@@ -9,6 +9,7 @@ from .parser import parse_bindings, serialize_bindings
 XDG_PREFIX      = "g11-macro-daemon"
 BINDINGS_FILE   = "key_bindings.ron"
 RECORDINGS_FILE = "key_recordings.ron"
+SETTINGS_FILE   = "settings.ron"
 
 _STUB = """\
 #![enable(explicit_struct_names, implicit_some)]
@@ -82,6 +83,41 @@ def ensure_config_dir() -> str | None:
         path.parent.mkdir(parents=True, exist_ok=True)
         if not path.exists():
             path.write_text(_STUB, encoding="utf-8")
+        return None
+    except Exception as e:
+        return str(e)
+
+
+def settings_path() -> Path:
+    return _config_dir() / SETTINGS_FILE
+
+
+def load_keyboard_model() -> str:
+    """Load keyboard model from settings.ron. Returns 'G11' or 'G15'."""
+    path = settings_path()
+    if not path.exists():
+        return "G11"
+    try:
+        text = path.read_text(encoding="utf-8")
+        if "G15" in text:
+            return "G15"
+        return "G11"
+    except Exception:
+        return "G11"
+
+
+def save_keyboard_model(model: str) -> str | None:
+    """Save keyboard model to settings.ron. Returns error message or None on success."""
+    path = settings_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        content = (
+            "#![enable(explicit_struct_names)]\n"
+            "Settings(\n"
+            f"    keyboard: {model},\n"
+            ")\n"
+        )
+        path.write_text(content, encoding="utf-8")
         return None
     except Exception as e:
         return str(e)

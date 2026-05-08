@@ -17,6 +17,10 @@ pub mod usb_id {
 
     /// USB PID for the regular (104-key) interface on a G11 Keyboard
     pub const PRODUCT_G11_STANDARD: u16 = 0xc221;
+
+    /// USB PID for the LCD/keypad interface on a G15 Keyboard.
+    /// This interface is used for LED control; G-key input comes via evdev instead.
+    pub const PRODUCT_G15_LCD: u16 = 0xc222;
 }
 
 mod multikey;

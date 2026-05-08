@@ -22,6 +22,26 @@ pub struct Config {
     pub key_bindings: Vec<KeyBinding>,
 }
 
+/// Which keyboard model the daemon should target
+#[derive(Debug, Default, Clone, Copy, PartialEq, Deserialize, Serialize)]
+pub enum KeyboardModel {
+    #[default]
+    G11,
+    G15,
+}
+
+/// Daemon-level settings (separate from key bindings)
+#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+pub struct Settings {
+    #[serde(default)]
+    pub keyboard: KeyboardModel,
+
+    /// Optional override for the evdev device path (e.g. `/dev/input/event17`).
+    /// Only used in G15 mode. If `None`, the daemon will auto-detect.
+    #[serde(default)]
+    pub device_path: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct KeyBinding {
     /// The `M` key (numbered `1 ..= 3`) whose bank must be active for this binding to apply
@@ -37,6 +57,7 @@ pub struct KeyBinding {
 pub const XDG_PREFIX: &str = "g11-macro-daemon";
 pub const XDG_CONFIG_KEY_BINDINGS: &str = "key_bindings.ron";
 pub const XDG_CONFIG_KEY_RECORDINGS: &str = "key_recordings.ron";
+pub const XDG_CONFIG_SETTINGS: &str = "settings.ron";
 
 /// Loads the [`XDG_CONFIG_KEY_BINDINGS`] file, creating an empty stub if it does not yet exist.
 pub fn ensure_and_load_config_file() -> Result<Config, LoadError> {
@@ -61,6 +82,19 @@ pub fn ensure_and_load_config_file() -> Result<Config, LoadError> {
     }
 
     Ok(Config { key_bindings })
+}
+
+/// Loads the [`XDG_CONFIG_SETTINGS`] file, returning defaults if it does not exist or cannot be parsed.
+pub fn load_settings() -> Settings {
+    let app_config_dir = xdg::BaseDirectories::with_prefix(XDG_PREFIX);
+    app_config_dir.find_config_file(XDG_CONFIG_SETTINGS)
+        .and_then(|path| {
+            std::fs::read_to_string(&path).ok()
+                .and_then(|text| ron::from_str(&text)
+                    .inspect_err(|err| warn!("Failed to parse settings file: {err:#?}. Using defaults."))
+                    .ok())
+        })
+        .unwrap_or_default()
 }
 
 /// Parse a key bindings file, being tolerant of one or both of the outer list brackets being absent
@@ -265,5 +299,46 @@ mod tests {
             .expect("does not fail to parse");
 
         assert_eq!(parsed, vec![]);
+    }
+
+    #[test]
+    fn settings_defaults_to_g11() {
+        let settings = Settings::default();
+        assert_eq!(settings.keyboard, KeyboardModel::G11);
+        assert_eq!(settings.device_path, None);
+    }
+
+    #[test]
+    fn settings_parses_g15_from_gui_format() {
+        let input = r#"
+            #![enable(explicit_struct_names)]
+            Settings(
+                keyboard: G15,
+            )
+        "#;
+        let settings: Settings = ron::from_str(input).expect("does not fail to parse");
+        assert_eq!(settings.keyboard, KeyboardModel::G15);
+        assert_eq!(settings.device_path, None);
+    }
+
+    #[test]
+    fn settings_parses_g15_with_device_path() {
+        let input = r#"
+            #![enable(explicit_struct_names)]
+            Settings(
+                keyboard: G15,
+                device_path: Some("/dev/input/event17"),
+            )
+        "#;
+        let settings: Settings = ron::from_str(input).expect("does not fail to parse");
+        assert_eq!(settings.keyboard, KeyboardModel::G15);
+        assert_eq!(settings.device_path, Some("/dev/input/event17".to_owned()));
+    }
+
+    #[test]
+    fn settings_parses_g11_minimal() {
+        let input = "Settings(keyboard: G11)";
+        let settings: Settings = ron::from_str(input).expect("does not fail to parse");
+        assert_eq!(settings.keyboard, KeyboardModel::G11);
     }
 }

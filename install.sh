@@ -172,6 +172,11 @@ sudo tee "$UDEV_FILE" > /dev/null << 'UDEV'
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c225", MODE="0666", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="g11-macro-daemon.service"
 # Logitech G11 — standard keyboard interface (needed for MR macro recording)
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c221", MODE="0666"
+
+# Logitech G15 — LCD/keypad interface (G-keys handled by lg-g15 kernel driver)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="g11-macro-daemon.service"
+# Logitech G15 — grant access to the evdev G-key input device
+SUBSYSTEM=="input", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666"
 UDEV
 
 sudo udevadm control --reload-rules && sudo udevadm trigger

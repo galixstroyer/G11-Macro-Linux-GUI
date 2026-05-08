@@ -7,6 +7,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, GLib
 
+from config import manager as config_mgr
 from daemon import service as svc
 
 
@@ -56,6 +57,23 @@ class ServicePage(Gtk.Box):
         status_group.add(self._autostart_row)
 
         content.append(status_group)
+
+        # ---- Keyboard model --------------------------------------
+        keyboard_group = Adw.PreferencesGroup(title="Keyboard")
+
+        self._model_row = Adw.ComboRow(
+            title="Keyboard Model",
+            subtitle="G11 uses raw HID; G15 uses the Linux input subsystem (evdev)",
+        )
+        model_list = Gtk.StringList.new(["G11", "G15"])
+        self._model_row.set_model(model_list)
+
+        current_model = config_mgr.load_keyboard_model()
+        self._model_row.set_selected(0 if current_model == "G11" else 1)
+        self._model_row.connect("notify::selected", self._on_keyboard_model_changed)
+        keyboard_group.add(self._model_row)
+
+        content.append(keyboard_group)
 
         # ---- Control buttons -------------------------------------
         ctrl_group = Adw.PreferencesGroup(title="Controls")
@@ -199,6 +217,15 @@ class ServicePage(Gtk.Box):
             self._show_toast(f"Error: {err or 'unknown'}", timeout=5)
         self._poll_status()
         self._refresh_logs()
+
+    def _on_keyboard_model_changed(self, row, _param):
+        model = "G11" if row.get_selected() == 0 else "G15"
+        err = config_mgr.save_keyboard_model(model)
+        if err:
+            self._show_toast(f"Failed to save setting: {err}", timeout=5)
+            return
+        self._show_toast(f"Keyboard set to {model} — restarting daemon…")
+        self._run_cmd(svc.restart, f"Daemon restarted in {model} mode")
 
     def _on_autostart_toggled(self, row, _param):
         if row.get_active():
