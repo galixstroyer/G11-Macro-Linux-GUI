@@ -5,6 +5,24 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -uo pipefail
 
+# ── Options ───────────────────────────────────────────────────────────────────
+NO_SERVICE=false
+for arg in "$@"; do
+    case "$arg" in
+        --no-service) NO_SERVICE=true ;;
+        --help|-h)
+            echo "Usage: bash install.sh [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --no-service   Skip daemon service setup (systemd/runit)."
+            echo "                 You can start the daemon from the GUI or manually."
+            echo "  --help, -h     Show this help message."
+            exit 0
+            ;;
+        *) echo "Unknown option: $arg (try --help)"; exit 1 ;;
+    esac
+done
+
 # ── Colours ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
@@ -55,8 +73,10 @@ done
 [[ "$PKG_MANAGER" == "apt-get" ]] && PKG_MANAGER="apt"
 [[ "$PKG_MANAGER" == "xbps-install" ]] && PKG_MANAGER="xbps"
 
-# Detect init system
-if command -v systemctl &>/dev/null && systemctl --user status &>/dev/null 2>&1; then
+# Detect init system (skip if --no-service)
+if [[ "$NO_SERVICE" == true ]]; then
+    INIT_SYSTEM="none"
+elif command -v systemctl &>/dev/null && systemctl --user status &>/dev/null 2>&1; then
     INIT_SYSTEM="systemd"
 elif command -v sv &>/dev/null; then
     INIT_SYSTEM="runit"
