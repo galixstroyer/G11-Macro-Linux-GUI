@@ -40,18 +40,19 @@ class ServicePage(Gtk.Box):
         status_group = Adw.PreferencesGroup(title="Daemon Status")
 
         # Status row
+        backend = svc.get_backend_name()
         status_row = Adw.ActionRow(title="g11-macro-daemon")
-        status_row.set_subtitle("systemd user service")
+        status_row.set_subtitle(f"managed via {backend}")
 
         self._status_badge = Gtk.Label(label="Checking…")
         self._status_badge.add_css_class("status-badge")
         status_row.add_suffix(self._status_badge)
         status_group.add(status_row)
 
-        # Auto-start row
+        # Auto-start row (only useful on systemd)
         self._autostart_row = Adw.SwitchRow(
             title="Start on Login",
-            subtitle="Enable the service with systemctl --user enable",
+            subtitle="Enable the daemon to start automatically",
         )
         self._autostart_row.connect("notify::active", self._on_autostart_toggled)
         status_group.add(self._autostart_row)
@@ -192,6 +193,12 @@ class ServicePage(Gtk.Box):
             badge.add_css_class("status-failed")
             self._start_btn.set_sensitive(True)
             self._stop_btn.set_sensitive(False)
+            self._restart_btn.set_sensitive(True)
+        elif status == svc.ServiceStatus.Unknown:
+            badge.set_label("? Unknown")
+            badge.add_css_class("status-stopped")
+            self._start_btn.set_sensitive(True)
+            self._stop_btn.set_sensitive(True)
             self._restart_btn.set_sensitive(True)
         else:
             badge.set_label("○ Stopped")

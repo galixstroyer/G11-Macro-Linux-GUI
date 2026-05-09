@@ -18,11 +18,11 @@ The installer handles everything automatically:
 - Installs or updates Rust (1.85+ required)
 - Builds and installs the daemon binary
 - Installs udev rules for USB HID access
-- Sets up the systemd user service
+- Sets up a daemon service (systemd or runit, depending on your init system)
 - Creates a Python virtual environment
 - Adds a desktop icon and app menu entry
 
-**Supported distributions:** Debian/Ubuntu/Kubuntu · Fedora · Arch Linux · openSUSE
+**Supported distributions:** Debian/Ubuntu/Kubuntu · Fedora · Arch Linux · openSUSE · Void Linux
 
 After installation, launch from the desktop icon, your app menu (search "G11"), or the terminal:
 
@@ -55,8 +55,8 @@ A full graphical interface built with Python, GTK4, and libadwaita.
 - **6 step types** — Key stroke, Type text, Mouse button, Move mouse, Scroll, Run program
 - **Key repeat** — set any key step to repeat 1–100 times (e.g. Backspace ×5)
 - **Keyboard model selector** — switch between G11 and G15 mode from the GUI
-- **Daemon controls** — start, stop, restart, enable auto-start on login
-- **Live log viewer** — tail the daemon's systemd journal directly in the app
+- **Daemon controls** — start, stop, restart the daemon (works with systemd, runit, or standalone)
+- **Live log viewer** — view daemon logs directly in the app
 - **LED panel** — toggle M1/M2/M3/MR LEDs on and off
 - **Recordings viewer** — see macros recorded with the MR key
 - **Desktop & app launcher** — launchable from the desktop and the app menu
@@ -101,7 +101,7 @@ gui/
 │   ├── parser.py               # RON file parser and serializer
 │   └── manager.py              # Config file paths and load/save
 ├── daemon/
-│   └── service.py              # systemctl interface
+│   └── service.py              # Daemon control (systemd / runit / direct)
 ├── hardware/
 │   └── leds.py                 # HID LED control via hidapi
 └── ui/
@@ -149,23 +149,49 @@ Macros are stored in `~/.config/g11-macro-daemon/key_bindings.ron`.
 ]
 ```
 
-Restart the service after editing the config file manually:
+Restart the daemon after editing the config file manually. Use the GUI's restart button, or from the terminal:
 
 ```bash
+# systemd
 systemctl --user restart g11-macro-daemon
+
+# runit
+sv restart g11-macro-daemon
+
+# or just use the GUI — it handles this automatically
 ```
 
-> The GUI saves and restarts the daemon automatically — no manual editing needed.
+### Running without a service
+
+The daemon has no dependency on any init system. You can run it directly:
+
+```bash
+RUST_LOG=WARN,g11=INFO g11-macro-daemon
+```
+
+The GUI can also start and stop the daemon directly — just click Start/Stop on the Service page. This works even without systemd or runit.
 
 ### Useful commands
 
-```bash
-# View daemon logs
-journalctl --user -u g11-macro-daemon -f
+<details>
+<summary>systemd</summary>
 
-# Check service status
+```bash
+journalctl --user -u g11-macro-daemon -f
 systemctl --user status g11-macro-daemon
 ```
+
+</details>
+
+<details>
+<summary>runit</summary>
+
+```bash
+sv status g11-macro-daemon
+cat ~/.config/sv/g11-macro-daemon/log/main/current
+```
+
+</details>
 
 <details>
 <summary>Manual daemon install (without install.sh)</summary>
@@ -178,10 +204,10 @@ source ~/.cargo/env
 # 2. Install udev rules (allows USB HID access without root)
 sudo tee /etc/udev/rules.d/g11-macro.rules << 'EOF'
 # G11
-SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c225", MODE="0666", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="g11-macro-daemon.service"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c225", MODE="0666"
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c221", MODE="0666"
 # G15
-SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="g11-macro-daemon.service"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666"
 SUBSYSTEM=="input", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666"
 EOF
 sudo udevadm control --reload-rules && sudo udevadm trigger
@@ -189,24 +215,8 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 # 3. Build and install
 cargo install --path g11-macro-daemon
 
-# 4. Create systemd service
-mkdir -p ~/.config/systemd/user
-cat > ~/.config/systemd/user/g11-macro-daemon.service << EOF
-[Unit]
-Description=Logitech G11 Macro Key Daemon
-StartLimitIntervalSec=10
-
-[Service]
-ExecStart=$HOME/.cargo/bin/g11-macro-daemon
-Environment="RUST_LOG=WARN,g11=INFO"
-Restart=always
-
-[Install]
-WantedBy=default.target
-EOF
-
-systemctl --user daemon-reload
-systemctl --user enable --now g11-macro-daemon
+# 4. Run directly, or set up a service for your init system
+RUST_LOG=WARN,g11=INFO g11-macro-daemon
 ```
 
 </details>

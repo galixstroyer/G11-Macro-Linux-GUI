@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
 #  G11 Macro Manager — Installer
-#  Supported: Debian/Ubuntu/Kubuntu, Fedora, Arch Linux, openSUSE
+#  Supported: Debian/Ubuntu/Kubuntu, Fedora, Arch Linux, openSUSE, Void Linux
 # ─────────────────────────────────────────────────────────────────────────────
 set -uo pipefail
 
@@ -34,11 +34,12 @@ LAUNCHER="$HOME/.local/bin/g11-macro-gui"
 APP_DESKTOP="$HOME/.local/share/applications/g11-macro.desktop"
 DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
 
-# ── Detect OS & desktop environment ──────────────────────────────────────────
+# ── Detect OS, package manager, init system, desktop environment ─────────────
 PKG_MANAGER="unknown"
 DISTRO="unknown"
 DISTRO_PRETTY="Unknown Linux"
 CURRENT_DE="unknown"
+INIT_SYSTEM="unknown"
 
 if [[ -f /etc/os-release ]]; then
     # shellcheck disable=SC1091
@@ -47,11 +48,19 @@ if [[ -f /etc/os-release ]]; then
     DISTRO_PRETTY="${PRETTY_NAME:-Unknown Linux}"
 fi
 
-for pm in apt-get dnf pacman zypper; do
+for pm in apt-get dnf pacman zypper xbps-install; do
     command -v "$pm" &>/dev/null && { PKG_MANAGER="$pm"; break; }
 done
 # normalise apt-get → apt
 [[ "$PKG_MANAGER" == "apt-get" ]] && PKG_MANAGER="apt"
+[[ "$PKG_MANAGER" == "xbps-install" ]] && PKG_MANAGER="xbps"
+
+# Detect init system
+if command -v systemctl &>/dev/null && systemctl --user status &>/dev/null 2>&1; then
+    INIT_SYSTEM="systemd"
+elif command -v sv &>/dev/null; then
+    INIT_SYSTEM="runit"
+fi
 
 de_raw="${XDG_CURRENT_DESKTOP:-${DESKTOP_SESSION:-}}"
 de_raw="${de_raw,,}"
@@ -70,6 +79,7 @@ echo -e "${BOLD}        G11 Macro Manager — Installer${NC}"
 echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "  OS       ${CYAN}${DISTRO_PRETTY}${NC}"
 echo -e "  Packages ${CYAN}${PKG_MANAGER}${NC}"
+echo -e "  Init     ${CYAN}${INIT_SYSTEM}${NC}"
 echo -e "  Desktop  ${CYAN}${CURRENT_DE}${NC}"
 echo -e "  Project  ${CYAN}${PROJECT_DIR}${NC}"
 echo ""
@@ -107,11 +117,21 @@ _install_zypper() {
         libudev-devel libxkbcommon-devel
 }
 
+_install_xbps() {
+    sudo xbps-install -Sy \
+        python3 python3-gobject python3-cairo \
+        gtk4 libadwaita \
+        libudev-devel libxkbcommon-devel \
+        python3-virtualenv \
+        hidapi gobject-introspection
+}
+
 case "$PKG_MANAGER" in
     apt)    _install_apt    && _ok "Packages installed (apt)" ;;
     dnf)    _install_dnf    && _ok "Packages installed (dnf)" ;;
     pacman) _install_pacman && _ok "Packages installed (pacman)" ;;
     zypper) _install_zypper && _ok "Packages installed (zypper)" ;;
+    xbps)   _install_xbps   && _ok "Packages installed (xbps)" ;;
     *) _warn "Unknown package manager — install GTK4 + libadwaita + PyGObject manually." ;;
 esac
 
@@ -167,7 +187,9 @@ fi
 _step "Installing udev rules"
 
 UDEV_FILE="/etc/udev/rules.d/g11-macro.rules"
-sudo tee "$UDEV_FILE" > /dev/null << 'UDEV'
+
+if [[ "$INIT_SYSTEM" == "systemd" ]]; then
+    sudo tee "$UDEV_FILE" > /dev/null << 'UDEV'
 # Logitech G11 — macro interface (allow LED + key event access)
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c225", MODE="0666", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="g11-macro-daemon.service"
 # Logitech G11 — standard keyboard interface (needed for MR macro recording)
@@ -178,17 +200,32 @@ SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="06
 # Logitech G15 — grant access to the evdev G-key input device
 SUBSYSTEM=="input", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666"
 UDEV
+else
+    # Non-systemd: udev rules without systemd auto-start tags
+    sudo tee "$UDEV_FILE" > /dev/null << 'UDEV'
+# Logitech G11 — macro interface (allow LED + key event access)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c225", MODE="0666"
+# Logitech G11 — standard keyboard interface (needed for MR macro recording)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c221", MODE="0666"
+
+# Logitech G15 — LCD/keypad interface (G-keys handled by lg-g15 kernel driver)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666"
+# Logitech G15 — grant access to the evdev G-key input device
+SUBSYSTEM=="input", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c222", MODE="0666"
+UDEV
+fi
 
 sudo udevadm control --reload-rules && sudo udevadm trigger
 _ok "udev rules → $UDEV_FILE"
 
-# ── Step 5 · systemd service ──────────────────────────────────────────────────
-_step "Setting up systemd user service"
+# ── Step 5 · Daemon service ──────────────────────────────────────────────────
+_step "Setting up daemon service"
 
-SERVICE_DIR="$HOME/.config/systemd/user"
-mkdir -p "$SERVICE_DIR"
+if [[ "$INIT_SYSTEM" == "systemd" ]]; then
+    SERVICE_DIR="$HOME/.config/systemd/user"
+    mkdir -p "$SERVICE_DIR"
 
-cat > "$SERVICE_DIR/g11-macro-daemon.service" << EOF
+    cat > "$SERVICE_DIR/g11-macro-daemon.service" << EOF
 [Unit]
 Description=Logitech G11 Macro Key Daemon
 StartLimitIntervalSec=10
@@ -202,14 +239,63 @@ Restart=always
 WantedBy=default.target
 EOF
 
-systemctl --user daemon-reload
-systemctl --user enable g11-macro-daemon
+    systemctl --user daemon-reload
+    systemctl --user enable g11-macro-daemon
 
-if systemctl --user restart g11-macro-daemon 2>/dev/null \
-|| systemctl --user start  g11-macro-daemon 2>/dev/null; then
-    _ok "Daemon enabled and started"
+    if systemctl --user restart g11-macro-daemon 2>/dev/null \
+    || systemctl --user start  g11-macro-daemon 2>/dev/null; then
+        _ok "Daemon enabled and started (systemd)"
+    else
+        _warn "Daemon service created but could not start — plug in your keyboard first"
+    fi
+
+elif [[ "$INIT_SYSTEM" == "runit" ]]; then
+    RUNIT_SV_DIR="$HOME/.config/sv/g11-macro-daemon"
+    mkdir -p "$RUNIT_SV_DIR/log"
+
+    cat > "$RUNIT_SV_DIR/run" << EOF
+#!/bin/sh
+exec $HOME/.cargo/bin/g11-macro-daemon 2>&1
+EOF
+    chmod +x "$RUNIT_SV_DIR/run"
+
+    # Log service — stores output in the log directory
+    RUNIT_LOG_DIR="$RUNIT_SV_DIR/log/main"
+    mkdir -p "$RUNIT_LOG_DIR"
+    cat > "$RUNIT_SV_DIR/log/run" << EOF
+#!/bin/sh
+exec svlogd -tt "$RUNIT_LOG_DIR"
+EOF
+    chmod +x "$RUNIT_SV_DIR/log/run"
+
+    # Set RUST_LOG via an env directory
+    mkdir -p "$RUNIT_SV_DIR/env"
+    echo "WARN,g11=INFO" > "$RUNIT_SV_DIR/env/RUST_LOG"
+
+    _ok "Runit service created → $RUNIT_SV_DIR"
+
+    # Check if user has a runsvdir session running
+    if pgrep -u "$(id -u)" runsvdir &>/dev/null; then
+        # Link into the user's active service directory
+        USER_SVDIR=$(pgrep -u "$(id -u)" -a runsvdir 2>/dev/null | grep -oP '(?<=runsvdir\s)\S+' | head -1)
+        if [[ -n "$USER_SVDIR" && -d "$USER_SVDIR" ]]; then
+            ln -sf "$RUNIT_SV_DIR" "$USER_SVDIR/g11-macro-daemon" 2>/dev/null
+            _ok "Linked into $USER_SVDIR — daemon should start automatically"
+        else
+            _info "runsvdir is running but couldn't detect service directory"
+            _info "Link manually: ln -s $RUNIT_SV_DIR <your-svdir>/g11-macro-daemon"
+        fi
+    else
+        _warn "No runsvdir session detected for your user"
+        _info "To start the daemon manually:"
+        _info "  RUST_LOG=WARN,g11=INFO $HOME/.cargo/bin/g11-macro-daemon"
+        _info "To enable as a user runit service, add runsvdir to your session and link:"
+        _info "  ln -s $RUNIT_SV_DIR ~/service/g11-macro-daemon"
+    fi
 else
-    _warn "Daemon service created but could not start — plug in your G11 keyboard first"
+    _warn "No supported init system found (systemd or runit)"
+    _info "Start the daemon manually:"
+    _info "  RUST_LOG=WARN,g11=INFO $HOME/.cargo/bin/g11-macro-daemon"
 fi
 
 # ── Step 6 · Python venv ──────────────────────────────────────────────────────
@@ -258,7 +344,11 @@ from gi.repository import Gtk, Adw
     _ok "GTK4 + libadwaita import: OK"
 else
     _warn "GTK4/libadwaita import check failed — the GUI may not work correctly"
-    _info "Try: sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1"
+    case "$PKG_MANAGER" in
+        apt)  _info "Try: sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1" ;;
+        xbps) _info "Try: sudo xbps-install python3-gobject gtk4 libadwaita gobject-introspection" ;;
+        *)    _info "Try installing python3-gi/python3-gobject, gtk4, and libadwaita for your distro" ;;
+    esac
 fi
 
 # ── Step 7 · Launcher script ──────────────────────────────────────────────────
@@ -356,19 +446,31 @@ _check() {
 }
 
 _check "Daemon binary"  test -x "$HOME/.cargo/bin/g11-macro-daemon"
-_check "Daemon service" systemctl --user is-enabled g11-macro-daemon
 _check "udev rules"     test -f "$UDEV_FILE"
 _check "Python venv"    test -d "$VENV_DIR"
 _check "GTK4 import"    "$VENV_PY" -c "import gi; gi.require_version('Gtk','4.0'); from gi.repository import Gtk"
 _check "Launcher"       test -x "$LAUNCHER"
 _check "App menu entry" test -f "$APP_DESKTOP"
 
-DAEMON_STATE=$(systemctl --user is-active g11-macro-daemon 2>/dev/null || echo "inactive")
-if [[ "$DAEMON_STATE" == "active" ]]; then
-    _ok "Daemon is running"
-    (( ++PASS ))
+if [[ "$INIT_SYSTEM" == "systemd" ]]; then
+    _check "Daemon service" systemctl --user is-enabled g11-macro-daemon
+    DAEMON_STATE=$(systemctl --user is-active g11-macro-daemon 2>/dev/null || echo "inactive")
+    if [[ "$DAEMON_STATE" == "active" ]]; then
+        _ok "Daemon is running"
+        (( ++PASS ))
+    else
+        _warn "Daemon is ${DAEMON_STATE} — it will start automatically when the keyboard is plugged in"
+    fi
+elif [[ "$INIT_SYSTEM" == "runit" ]]; then
+    _check "Runit service" test -x "$HOME/.config/sv/g11-macro-daemon/run"
+    if sv status g11-macro-daemon &>/dev/null 2>&1; then
+        _ok "Daemon is running (runit)"
+        (( ++PASS ))
+    else
+        _warn "Daemon is not running — see instructions above to enable it"
+    fi
 else
-    _warn "Daemon is ${DAEMON_STATE} — it will start automatically when the G11 is plugged in"
+    _warn "No init system detected — start the daemon manually"
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
@@ -381,8 +483,16 @@ echo -e "  ${BOLD}Launch the GUI:${NC}"
 echo -e "    Double-click the desktop icon, or press Super and search 'G11'"
 echo -e "    Or from terminal: ${CYAN}g11-macro-gui${NC}"
 echo ""
-echo -e "  ${BOLD}Daemon logs:${NC}"
-echo -e "    ${CYAN}journalctl --user -u g11-macro-daemon -f${NC}"
+if [[ "$INIT_SYSTEM" == "systemd" ]]; then
+    echo -e "  ${BOLD}Daemon logs:${NC}"
+    echo -e "    ${CYAN}journalctl --user -u g11-macro-daemon -f${NC}"
+elif [[ "$INIT_SYSTEM" == "runit" ]]; then
+    echo -e "  ${BOLD}Daemon logs:${NC}"
+    echo -e "    ${CYAN}cat $HOME/.config/sv/g11-macro-daemon/log/main/current${NC}"
+else
+    echo -e "  ${BOLD}Start daemon manually:${NC}"
+    echo -e "    ${CYAN}RUST_LOG=WARN,g11=INFO $HOME/.cargo/bin/g11-macro-daemon${NC}"
+fi
 echo ""
 echo -e "  ${BOLD}Config file:${NC}"
 echo -e "    ${CYAN}~/.config/g11-macro-daemon/key_bindings.ron${NC}"
