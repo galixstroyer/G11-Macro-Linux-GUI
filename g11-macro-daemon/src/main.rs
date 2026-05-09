@@ -110,8 +110,10 @@ fn run_g15(binding_banks: &mut bindings::BindingBanks, enigo: &mut Enigo, device
                             .inspect_err(|err| error!("Unable to execute {step:?}! Cause: {err:#?}"));
                     }
                 },
-            Err(err) =>
-                error!("Error reading evdev event: {err}"),
+            Err(err) => {
+                error!("Fatal: failed to read from evdev device: {err}");
+                std::process::exit(1);
+            }
         }
     }
 }
