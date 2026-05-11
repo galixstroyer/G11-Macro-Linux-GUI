@@ -16,7 +16,7 @@ g11-macro-keys = { version = "0.3.*", path = "../g11-macro-keys" }
 
 hidapi.workspace = true
 evdev.workspace = true
-enigo = { workspace = true, default-features = false, features = ["x11rb", "serde"] }
+enigo = { workspace = true, default-features = false, features = ["xdo", "serde"] }
 xdg.workspace = true
 keycode.workspace = true
 

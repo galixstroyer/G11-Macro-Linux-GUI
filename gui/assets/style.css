@@ -4,168 +4,256 @@
 
 /* --- Sidebar -------------------------------------------- */
 .sidebar-nav {
-    background-color: @sidebar_bg_color;
+    background-color: alpha(@sidebar_bg_color, 0.95);
 }
 
 .sidebar-nav row {
     padding: 4px 8px;
     border-radius: 8px;
     margin: 2px 6px;
+    transition: background-color 150ms ease;
 }
 
 .sidebar-nav row:selected {
-    background-color: alpha(@accent_color, 0.2);
+    background-color: alpha(@accent_color, 0.18);
     color: @accent_color;
+}
+
+.sidebar-nav row:hover:not(:selected) {
+    background-color: alpha(@foreground_color, 0.06);
+}
+
+.sidebar-brand {
+    padding: 14px 16px 10px 16px;
+}
+
+.sidebar-brand-title {
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-version {
+    color: alpha(@foreground_color, 0.35);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 /* --- Keyboard panel ------------------------------------ */
 .keyboard-panel {
-    background-color: #1c1c22;
-    border-radius: 14px;
-    padding: 20px;
+    background: linear-gradient(180deg, #1e1e26 0%, #181820 100%);
+    border-radius: 16px;
+    padding: 18px 22px 16px 22px;
     margin: 12px;
-    box-shadow: 0 4px 24px alpha(black, 0.35);
+    box-shadow: 0 6px 24px alpha(black, 0.4), inset 0 1px 0 alpha(white, 0.04);
+    border: 1px solid alpha(white, 0.06);
+}
+
+.keyboard-model-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: alpha(@foreground_color, 0.35);
+}
+
+.keyboard-model-label-g11 {
+    color: alpha(#4488ff, 0.6);
+}
+
+.keyboard-model-label-g15 {
+    color: alpha(#ff8844, 0.6);
 }
 
 /* --- G keys -------------------------------------------- */
 .gkey {
-    background-color: #2a2a33;
-    color: #b0b0c0;
+    background: linear-gradient(180deg, #2e2e3a 0%, #262633 100%);
+    color: #9898a8;
     border-radius: 8px;
-    border: 1px solid #3a3a48;
-    font-weight: bold;
+    border: 1px solid #3a3a4a;
+    font-weight: 700;
     font-size: 11px;
-    min-width:  52px;
-    min-height: 52px;
-    transition: background-color 120ms ease, box-shadow 120ms ease;
+    min-width: 56px;
+    min-height: 56px;
+    box-shadow: 0 2px 4px alpha(black, 0.3), inset 0 1px 0 alpha(white, 0.06);
+    transition: all 120ms ease;
 }
 
 .gkey:hover {
-    background-color: #35354a;
-    border-color: #5555aa;
+    background: linear-gradient(180deg, #38384a 0%, #30303f 100%);
+    border-color: #5858a0;
+    color: #c0c0d0;
+    box-shadow: 0 2px 8px alpha(black, 0.4), inset 0 1px 0 alpha(white, 0.08);
+}
+
+.gkey:active {
+    background: #2a2a38;
+    box-shadow: inset 0 1px 3px alpha(black, 0.4);
 }
 
 .gkey.has-macro {
-    background-color: #1a3d6a;
-    border-color: #2266bb;
+    background: linear-gradient(180deg, #1c4070 0%, #183660 100%);
+    border-color: #2868b8;
     color: #88ccff;
+    box-shadow: 0 2px 6px alpha(#0066ff, 0.15), inset 0 1px 0 alpha(white, 0.06);
 }
 
 .gkey.has-macro:hover {
-    background-color: #1f4a7f;
-    border-color: #3388dd;
+    background: linear-gradient(180deg, #225088 0%, #1c4070 100%);
+    border-color: #3888dd;
+    box-shadow: 0 2px 10px alpha(#0066ff, 0.25), inset 0 1px 0 alpha(white, 0.08);
 }
 
 .gkey.selected {
-    background-color: #0055cc;
+    background: linear-gradient(180deg, #0066dd 0%, #0055bb 100%);
     border-color: #44aaff;
     color: white;
-    box-shadow: 0 0 0 2px #44aaff, 0 2px 10px alpha(#0088ff, 0.5);
+    box-shadow: 0 0 0 2px alpha(#44aaff, 0.5), 0 4px 16px alpha(#0088ff, 0.35);
 }
 
 .gkey.selected.has-macro {
-    background-color: #0066dd;
+    background: linear-gradient(180deg, #0070ee 0%, #0060cc 100%);
+}
+
+/* G15 accent overrides */
+.g15-accent .gkey.has-macro {
+    background: linear-gradient(180deg, #6a4018 0%, #5a3418 100%);
+    border-color: #b86828;
+    color: #ffcc88;
+    box-shadow: 0 2px 6px alpha(#ff6600, 0.15), inset 0 1px 0 alpha(white, 0.06);
+}
+
+.g15-accent .gkey.has-macro:hover {
+    background: linear-gradient(180deg, #7a4820 0%, #6a3c18 100%);
+    border-color: #dd8838;
+    box-shadow: 0 2px 10px alpha(#ff6600, 0.25), inset 0 1px 0 alpha(white, 0.08);
+}
+
+.g15-accent .gkey.selected {
+    background: linear-gradient(180deg, #dd6600 0%, #bb5500 100%);
+    border-color: #ffaa44;
+    box-shadow: 0 0 0 2px alpha(#ffaa44, 0.5), 0 4px 16px alpha(#ff8800, 0.35);
+}
+
+.g15-accent .gkey.selected.has-macro {
+    background: linear-gradient(180deg, #ee7000 0%, #cc6000 100%);
 }
 
 /* --- M bank keys --------------------------------------- */
 .mkey {
-    background-color: #252530;
-    color: #808090;
+    background: linear-gradient(180deg, #282836 0%, #222230 100%);
+    color: #707088;
     border-radius: 7px;
-    border: 1px solid #38384a;
-    font-weight: bold;
+    border: 1px solid #35354a;
+    font-weight: 700;
     font-size: 12px;
-    min-width:  46px;
-    min-height: 38px;
-    transition: background-color 100ms ease;
+    min-width: 48px;
+    min-height: 40px;
+    box-shadow: 0 2px 4px alpha(black, 0.25), inset 0 1px 0 alpha(white, 0.04);
+    transition: all 100ms ease;
 }
 
 .mkey:hover {
-    background-color: #303040;
+    background: linear-gradient(180deg, #323244 0%, #2c2c3c 100%);
+    border-color: #48486a;
+    color: #9090a8;
 }
 
 .mkey.active {
-    background-color: #003d99;
-    border-color: #0055cc;
-    color: #aaccff;
-    box-shadow: 0 0 8px alpha(#0066ff, 0.4);
+    background: linear-gradient(180deg, #004cc0 0%, #003da0 100%);
+    border-color: #2266dd;
+    color: #bbddff;
+    box-shadow: 0 2px 10px alpha(#0066ff, 0.4), inset 0 1px 0 alpha(white, 0.1);
+}
+
+.g15-accent .mkey.active {
+    background: linear-gradient(180deg, #c05000 0%, #a04000 100%);
+    border-color: #dd7722;
+    color: #ffddbb;
+    box-shadow: 0 2px 10px alpha(#ff6600, 0.4), inset 0 1px 0 alpha(white, 0.1);
 }
 
 /* --- MR key ------------------------------------------- */
 .mrkey {
-    background-color: #252530;
-    color: #808090;
+    background: linear-gradient(180deg, #282836 0%, #222230 100%);
+    color: #707088;
     border-radius: 7px;
-    border: 1px solid #38384a;
-    font-weight: bold;
+    border: 1px solid #35354a;
+    font-weight: 700;
     font-size: 12px;
-    min-width:  46px;
-    min-height: 38px;
+    min-width: 48px;
+    min-height: 40px;
+    box-shadow: 0 2px 4px alpha(black, 0.25), inset 0 1px 0 alpha(white, 0.04);
 }
 
 .mrkey.active {
-    background-color: #660033;
+    background: linear-gradient(180deg, #770033 0%, #550028 100%);
     border-color: #cc0055;
     color: #ffaacc;
-    box-shadow: 0 0 8px alpha(#ff0066, 0.4);
+    box-shadow: 0 2px 10px alpha(#ff0066, 0.4), inset 0 1px 0 alpha(white, 0.08);
 }
 
 /* --- Service status badges ----------------------------- */
 .status-badge {
     border-radius: 20px;
     padding: 3px 12px;
-    font-weight: bold;
-    font-size: 13px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.3px;
 }
 
 .status-running {
-    background-color: alpha(#33cc66, 0.18);
+    background-color: alpha(#33cc66, 0.15);
     color: #33cc66;
-    border: 1px solid alpha(#33cc66, 0.4);
+    border: 1px solid alpha(#33cc66, 0.3);
 }
 
 .status-stopped {
-    background-color: alpha(#cc5500, 0.18);
+    background-color: alpha(#cc7733, 0.12);
     color: #cc7733;
-    border: 1px solid alpha(#cc5500, 0.3);
+    border: 1px solid alpha(#cc7733, 0.25);
 }
 
 .status-failed {
-    background-color: alpha(#cc3333, 0.18);
+    background-color: alpha(#ff4444, 0.12);
     color: #ff4444;
-    border: 1px solid alpha(#cc3333, 0.4);
+    border: 1px solid alpha(#ff4444, 0.3);
 }
 
 /* --- Log viewer --------------------------------------- */
 .log-view {
     font-family: monospace;
     font-size: 12px;
-    background-color: #12121a;
-    color: #b0b0c8;
-    border-radius: 8px;
-    padding: 8px;
+    background-color: #101018;
+    color: #a8a8c0;
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid alpha(white, 0.04);
 }
 
 /* --- Step rows --------------------------------------- */
 .step-row-icon {
     color: @accent_color;
+    opacity: 0.85;
 }
 
 .step-drag-handle {
-    color: alpha(@foreground_color, 0.4);
+    color: alpha(@foreground_color, 0.3);
 }
 
 /* --- LED page ---------------------------------------- */
 .led-indicator {
     border-radius: 50%;
-    min-width:  14px;
+    min-width: 14px;
     min-height: 14px;
     border: 1px solid alpha(currentColor, 0.5);
+    transition: all 200ms ease;
 }
 
 .led-on {
     background-color: #2266ff;
-    box-shadow: 0 0 6px alpha(#2266ff, 0.8);
+    box-shadow: 0 0 8px alpha(#2266ff, 0.7);
     color: #2266ff;
 }
 
@@ -176,19 +264,40 @@
 
 /* --- Misc --------------------------------------------- */
 .section-title {
-    font-weight: bold;
-    font-size: 13px;
-    color: alpha(@foreground_color, 0.7);
+    font-weight: 700;
+    font-size: 12px;
+    color: alpha(@foreground_color, 0.55);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
 }
 
 .dimmed {
-    color: alpha(@foreground_color, 0.5);
+    color: alpha(@foreground_color, 0.45);
     font-size: 12px;
 }
 
 .macro-summary {
-    color: alpha(@foreground_color, 0.65);
+    color: alpha(@foreground_color, 0.6);
     font-size: 12px;
+}
+
+.keyboard-legend {
+    color: alpha(@foreground_color, 0.35);
+    font-size: 11px;
+    font-style: italic;
+}
+
+/* --- Macro editor ------------------------------------- */
+.macro-editor-header {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.empty-state-icon {
+    opacity: 0.2;
+}
+
+.empty-state-label {
+    color: alpha(@foreground_color, 0.35);
+    font-size: 13px;
 }

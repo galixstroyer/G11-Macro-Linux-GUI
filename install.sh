@@ -113,28 +113,32 @@ _install_apt() {
         python3-gi python3-gi-cairo python3-venv python3-full \
         gir1.2-gtk-4.0 gir1.2-adw-1 \
         libudev-dev \
-        libxkbcommon-dev
+        libxkbcommon-dev \
+        libxdo-dev
 }
 
 _install_dnf() {
     sudo dnf install -y \
         python3-gobject python3-gobject-cairo \
         gtk4 libadwaita \
-        systemd-devel libxkbcommon-devel
+        systemd-devel libxkbcommon-devel \
+        libxdo-devel
 }
 
 _install_pacman() {
     sudo pacman -S --noconfirm --needed \
         python-gobject python-cairo \
         gtk4 libadwaita \
-        libxkbcommon
+        libxkbcommon \
+        xdotool
 }
 
 _install_zypper() {
     sudo zypper install -y \
         python3-gobject python3-gobject-cairo \
         typelib-1_0-Gtk-4_0 typelib-1_0-Adw-1 \
-        libudev-devel libxkbcommon-devel
+        libudev-devel libxkbcommon-devel \
+        xdotool-devel
 }
 
 _install_xbps() {
@@ -143,7 +147,8 @@ _install_xbps() {
         gtk4 libadwaita \
         libudev-devel libxkbcommon-devel \
         python3-virtualenv \
-        hidapi gobject-introspection
+        hidapi gobject-introspection \
+        xdotool-devel
 }
 
 case "$PKG_MANAGER" in

@@ -133,19 +133,26 @@ class MainWindow(Adw.ApplicationWindow):
         sidebar_box.add_css_class("sidebar-nav")
 
         # App branding at top
-        brand = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        brand.set_margin_start(16)
-        brand.set_margin_end(16)
-        brand.set_margin_top(16)
-        brand.set_margin_bottom(8)
+        brand = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        brand.add_css_class("sidebar-brand")
 
         icon = Gtk.Image.new_from_icon_name("input-keyboard-symbolic")
-        icon.set_pixel_size(22)
+        icon.set_pixel_size(24)
+        icon.set_opacity(0.8)
         brand.append(icon)
 
-        title = Gtk.Label(label="G11 Macro")
-        title.add_css_class("title-4")
-        brand.append(title)
+        brand_text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+        title = Gtk.Label(label="Macro Manager")
+        title.add_css_class("sidebar-brand-title")
+        title.set_halign(Gtk.Align.START)
+        brand_text.append(title)
+
+        subtitle = Gtk.Label(label="Logitech G11 / G15")
+        subtitle.add_css_class("dimmed")
+        subtitle.set_halign(Gtk.Align.START)
+        brand_text.append(subtitle)
+
+        brand.append(brand_text)
 
         sidebar_box.append(brand)
         sidebar_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
@@ -166,9 +173,9 @@ class MainWindow(Adw.ApplicationWindow):
         sidebar_box.append(self._nav_list)
 
         # Version label at bottom
-        ver = Gtk.Label(label="v0.1.0")
-        ver.add_css_class("dimmed")
-        ver.set_margin_bottom(10)
+        ver = Gtk.Label(label="v0.3.0")
+        ver.add_css_class("sidebar-version")
+        ver.set_margin_bottom(12)
         sidebar_box.append(ver)
 
         return sidebar_box
@@ -202,11 +209,11 @@ class MainWindow(Adw.ApplicationWindow):
         icon.set_opacity(0.7)
         box.append(icon)
 
-        title = Gtk.Label(label="G11 Macro Manager")
+        title = Gtk.Label(label="Macro Manager")
         title.add_css_class("title-1")
         box.append(title)
 
-        subtitle = Gtk.Label(label="A GUI for the g11-macro-daemon")
+        subtitle = Gtk.Label(label="Configure macros for Logitech G11 and G15 keyboards")
         subtitle.add_css_class("title-4")
         subtitle.set_opacity(0.7)
         box.append(subtitle)
@@ -218,7 +225,8 @@ class MainWindow(Adw.ApplicationWindow):
 
         items = [
             ("Daemon",  "g11-macro-daemon v0.3.0"),
-            ("Author",  "Ryan Scheidter"),
+            ("GUI",     "galixtroyer"),
+            ("Daemon by", "Ryan Scheidter"),
             ("License", "MIT"),
             ("Config",  "~/.config/g11-macro-daemon/"),
         ]

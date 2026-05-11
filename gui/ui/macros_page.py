@@ -41,10 +41,10 @@ class MacrosPage(Gtk.Box):
     def _build(self):
         # Top toolbar
         tb = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        tb.set_margin_start(12)
+        tb.set_margin_start(16)
         tb.set_margin_end(12)
-        tb.set_margin_top(10)
-        tb.set_margin_bottom(6)
+        tb.set_margin_top(12)
+        tb.set_margin_bottom(8)
 
         title = Gtk.Label(label="Macro Keys")
         title.add_css_class("title-3")
@@ -65,9 +65,6 @@ class MacrosPage(Gtk.Box):
         tb.append(edit_btn)
 
         self.append(tb)
-
-        sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        self.append(sep)
 
         # Main split pane
         paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)

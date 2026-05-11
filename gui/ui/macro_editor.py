@@ -37,9 +37,11 @@ class MacroEditorPanel(Gtk.Box):
     def _build(self):
         # ---- Header ------------------------------------------------
         self._header_label = Gtk.Label(label="Select a key to edit its macro")
-        self._header_label.add_css_class("title-4")
-        self._header_label.set_margin_top(16)
+        self._header_label.add_css_class("macro-editor-header")
+        self._header_label.set_margin_top(18)
         self._header_label.set_margin_bottom(4)
+        self._header_label.set_margin_start(12)
+        self._header_label.set_halign(Gtk.Align.START)
         self.append(self._header_label)
 
         # Trigger row (Press / Release)
@@ -73,11 +75,22 @@ class MacroEditorPanel(Gtk.Box):
         self.append(scroll)
 
         # ---- Empty state placeholder -------------------------------
-        self._empty_label = Gtk.Label(label="No steps yet — add one below")
-        self._empty_label.add_css_class("dimmed")
-        self._empty_label.set_margin_top(24)
-        self._empty_label.set_margin_bottom(24)
-        self._list_box.append(self._empty_label)
+        empty_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        empty_box.set_valign(Gtk.Align.CENTER)
+        empty_box.set_margin_top(32)
+        empty_box.set_margin_bottom(32)
+
+        empty_icon = Gtk.Image.new_from_icon_name("list-add-symbolic")
+        empty_icon.set_pixel_size(32)
+        empty_icon.add_css_class("empty-state-icon")
+        empty_box.append(empty_icon)
+
+        self._empty_label = Gtk.Label(label="No steps yet — click Add Step below")
+        self._empty_label.add_css_class("empty-state-label")
+        empty_box.append(self._empty_label)
+
+        self._empty_box = empty_box
+        self._list_box.append(self._empty_box)
 
         # ---- Bottom action bar -------------------------------------
         action_bar = Gtk.ActionBar()
@@ -139,7 +152,7 @@ class MacroEditorPanel(Gtk.Box):
         self._step_rows.clear()
 
         steps = self._binding.script if self._binding else []
-        self._empty_label.set_visible(len(steps) == 0)
+        self._empty_box.set_visible(len(steps) == 0)
 
         for i, step in enumerate(steps):
             self._insert_step_row(step, i)
@@ -152,7 +165,7 @@ class MacroEditorPanel(Gtk.Box):
         row.connect("move-down-requested", lambda r: self._on_move_step(r, +1))
         self._list_box.insert(row, index)
         self._step_rows.insert(index, row)
-        self._empty_label.set_visible(False)
+        self._empty_box.set_visible(False)
 
     def _row_index(self, row: StepRow) -> int:
         return self._step_rows.index(row)
@@ -194,7 +207,7 @@ class MacroEditorPanel(Gtk.Box):
         self._binding.script.pop(idx)
         self._list_box.remove(row)
         self._step_rows.pop(idx)
-        self._empty_label.set_visible(len(self._step_rows) == 0)
+        self._empty_box.set_visible(len(self._step_rows) == 0)
 
     def _on_move_step(self, row: StepRow, delta: int):
         if not self._binding:
